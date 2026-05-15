@@ -6,12 +6,13 @@ Playwright E2E suite for the Northwind Goods storefront — a React 19 + Vite e-
 
 ```bash
 npm install
-npm run install:browsers
-npm test          # full e2e run
+npm test          # pretest hook installs the Chromium build, then runs the suite
 npm run typecheck # tsc --noEmit; catches type errors before runtime
 ```
 
-Playwright boots the storefront itself via the `webServer` block in `playwright.config.ts`. The SUT is expected as a peer directory (`../example-e-commerce-website`); override with `E2E_SUT_DIR` for any other layout. Full env-var list is in [`docs/SETUP.md`](docs/SETUP.md).
+The SUT (Northwind Goods storefront) must be cloned alongside this repo as `../example-e-commerce-website` and have its dependencies installed — Playwright boots it via the `webServer` block in `playwright.config.ts`. Override the path with `E2E_SUT_DIR=/path/to/sut` if you keep it somewhere else. Full env-var list is in [`docs/SETUP.md`](docs/SETUP.md).
+
+On Linux CI, `npm run install:browsers` (with `--with-deps`) is the way to also pull system libraries; the local `pretest` keeps it lean.
 
 ## What's covered
 
