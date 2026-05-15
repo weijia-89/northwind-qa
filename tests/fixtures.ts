@@ -5,80 +5,46 @@ type SpApi = {
   cookieBannerVisible?: () => boolean;
 };
 
-// Dismiss the SecurePrivacy cookie banner using the vendor's documented
-// lifecycle:
+// Dismiss the SecurePrivacy cookie banner. Per the SP JS API reference
+// (support.secureprivacy.ai), `sp_init` fires when `window.sp` is ready;
+// `hideCookieBanner()` hides the banner; `cookieBannerVisible()` is the
+// truth signal we assert on after the call.
 //
-//   1. Wait for the `sp_init` window event. Per the SP JavaScript API
-//      reference (support.secureprivacy.ai), this is the official signal
-//      that the `sp` object is ready. Fall back to polling for `window.sp`
-//      in case the listener was registered after the event fired.
-//   2. Call `sp.hideCookieBanner()`.
-//   3. Verify with `sp.cookieBannerVisible()` returning false — proving
-//      the call actually hid the banner, not just that it didn't throw.
+// One race to handle: `sp_init` may have already fired before this
+// listener subscribes (the script tag is in `index.html`, so it can be
+// ready on first paint). We check `window.sp` up front to cover that.
 //
-// If SP is offline / blocked / slow, the whole thing soft-fails after the
-// 3s overall budget and a console.warn breadcrumb lands in the test log so
-// a broken SP isn't silent in CI.
+// Soft-fail on SP outage: if the vendor script never loads, we log and
+// continue so a broken third party doesn't surface as cryptic
+// "element intercepted" errors elsewhere in the suite.
 async function dismissCookieBanner(page: Page): Promise<void> {
   const BUDGET_MS = 3000;
   try {
     await page.evaluate((budget) => {
       return new Promise<void>((resolve, reject) => {
         const timer = setTimeout(
-          () => reject(new Error('SP did not become ready within budget')),
+          () => reject(new Error('SP not ready within budget')),
           budget,
         );
 
-        const tryDismiss = () => {
+        // Poll for readiness, then hide and verify. Polling covers both
+        // (a) `sp_init` having already fired pre-subscription and
+        // (b) the small render lag between `hideCookieBanner()` returning
+        // and `cookieBannerVisible()` flipping to false.
+        const poll = setInterval(() => {
           const sp = (window as unknown as { sp?: SpApi }).sp;
-          if (!sp || typeof sp.hideCookieBanner !== 'function') return false;
-          try {
-            sp.hideCookieBanner();
-          } catch {
-            // Banner DOM not injected yet; the caller will retry via the
-            // listener path or the readiness poll.
-            return false;
-          }
-          // If `cookieBannerVisible` is exposed, use it as the truth signal.
-          // Older bundles might not have it; treat absence as "trust the call."
-          if (typeof sp.cookieBannerVisible === 'function') {
-            if (sp.cookieBannerVisible()) return false;
-          }
+          if (!sp?.hideCookieBanner) return;
+          sp.hideCookieBanner();
+          if (sp.cookieBannerVisible?.()) return;
+          clearInterval(poll);
           clearTimeout(timer);
           resolve();
-          return true;
-        };
-
-        // 1) Try immediately — `sp_init` may have already fired before the
-        //    fixture got a chance to subscribe.
-        if (tryDismiss()) return;
-
-        // 2) Subscribe to the official ready event.
-        window.addEventListener(
-          'sp_init',
-          () => {
-            // SP DOM injection happens shortly after `sp_init`; poll on a
-            // microtask cadence rather than a fixed delay.
-            const poll = setInterval(() => {
-              if (tryDismiss()) clearInterval(poll);
-            }, 50);
-            setTimeout(() => clearInterval(poll), budget);
-          },
-          { once: true },
-        );
-
-        // 3) Belt-and-braces fallback: poll in case `sp_init` already fired
-        //    before this listener was added (race on slow page boot).
-        const fallback = setInterval(() => {
-          if (tryDismiss()) clearInterval(fallback);
-        }, 100);
-        setTimeout(() => clearInterval(fallback), budget);
+        }, 50);
+        // Clean up on timeout so we don't leak the interval.
+        setTimeout(() => clearInterval(poll), budget);
       });
     }, BUDGET_MS);
   } catch {
-    // SP not ready / offline / blocked. Surface a breadcrumb so a broken
-    // SP doesn't manifest only as cryptic "intercepted by another element"
-    // errors in unrelated specs.
     console.warn(
       '[fixtures] SecurePrivacy did not dismiss within %dms — continuing without it',
       BUDGET_MS,
