@@ -84,6 +84,8 @@ rm /tmp/sut_deploy /tmp/sut_deploy.pub
 
 Verify with `gh repo deploy-key list --repo OWNER/example-e-commerce-website` (should show one entry marked `read-only`) and `gh secret list --repo OWNER/northwind-qa` (should list `SUT_DEPLOY_KEY`).
 
+**Web UI alternative if you don't have `gh` installed:** SUT repo → *Settings → Deploy keys → Add deploy key* (paste the contents of `sut_deploy.pub`; leave *Allow write access* unchecked). Then northwind-qa repo → *Settings → Secrets and variables → Actions → New repository secret* (name it `SUT_DEPLOY_KEY`, paste the contents of `sut_deploy`, which is the private half).
+
 If the SUT repo is public, leave `SUT_DEPLOY_KEY` unset. The `ssh-key:` parameter is optional and `actions/checkout` falls back to https + `GITHUB_TOKEN` for any public repo.
 
 The rationale for picking deploy key over a fine-grained PAT is in [`DECISIONS.md`](DECISIONS.md#ci).

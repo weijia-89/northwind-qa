@@ -14,3 +14,12 @@ LOOM_SCRIPT.md
 *.mp4
 *.mov
 *.webm
+
+# Safety belt: deploy-key keypair files if anyone runs the
+# `ssh-keygen` recipe from docs/SETUP.md inside this directory
+# instead of /tmp. Never commit a private key.
+/sut_deploy
+/sut_deploy.pub
+*.pem
+id_ed25519*
+id_rsa*

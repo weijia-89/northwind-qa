@@ -34,7 +34,7 @@ Short rationales for the non-obvious choices in this suite. One bullet per decis
 
 ## CI
 
-- **Read-only deploy key for the SUT clone** over a fine-grained PAT. Reason: the deploy key registration binds the key to one specific repo, and GitHub enforces the read-only flag at the key level rather than at the token-permissions level. No expiration to rotate either. A fine-grained PAT works (an earlier iteration of the workflow used one), but for a long-lived CI wiring the deploy key has fewer ways to misconfigure. The default `GITHUB_TOKEN` is not an option for a private SUT because GitHub scopes that token to the workflow's own repo. Setup in [`SETUP.md`](SETUP.md#ci-on-github).
+- **Read-only deploy key for the SUT clone** over a fine-grained PAT. Reason: the deploy key registration binds the key to one specific repo, and GitHub enforces the read-only flag at the key level rather than at the token-permissions level. No expiration to rotate either. A fine-grained PAT would also work, but for a long-lived CI wiring the deploy key has fewer ways to misconfigure. The default `GITHUB_TOKEN` is not an option for a private SUT because GitHub scopes that token to the workflow's own repo. Setup in [`SETUP.md`](SETUP.md#ci-on-github).
 - **Workflow fails loudly at preflight when `SUT_REPO` is unset.** Reason: a missing variable should fail with a clear setup hint. Not silently try to clone a placeholder repo, or burn 90 seconds of CI minutes installing dependencies before noticing.
 
 ## What we cut

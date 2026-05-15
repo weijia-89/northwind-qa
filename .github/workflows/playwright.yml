@@ -25,12 +25,12 @@ jobs:
           fi
 
       - name: Checkout test suite
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: northwind-qa
 
       - name: Checkout SUT
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ vars.SUT_REPO }}
           ref: ${{ vars.SUT_REF || 'main' }}
@@ -47,7 +47,7 @@ jobs:
           ssh-key: ${{ secrets.SUT_DEPLOY_KEY }}
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload report
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-report
           path: northwind-qa/playwright-report
