@@ -16,7 +16,7 @@ On Linux CI, `npm run install:browsers` (with `--with-deps`) is the way to also 
 
 ## What's covered
 
-37 application tests + 1 auth setup. 34 pass outright; 3 are `test.fail()` regression guards (B-002, B-003, B-004) that flip green when the SUT is fixed. Whole suite runs in ~13s. Single Chromium project for anonymous flows + a second project for authenticated checkout that consumes storage state from `auth.setup.ts`.
+37 application tests + 1 auth setup. 34 pass outright; 3 are `test.fail()` regression guards (B-002, B-003, B-004) that flip green when the SUT is fixed. Whole suite runs in ~15s locally on a warm cache. Single Chromium project for anonymous flows + a second project for authenticated checkout that consumes storage state from `auth.setup.ts`.
 
 | File | Tests | Covers |
 | --- | --- | --- |
