@@ -8,9 +8,10 @@ node_modules/
 .env
 .env.local
 
-# Loom walkthrough — script + any recorded video.
+# Loom walkthrough — cheat sheet + full prep + any recorded video.
 # Not required to run the suite; kept locally for the demo only.
 LOOM_SCRIPT.md
+LOOM_CONTEXT.md
 *.mp4
 *.mov
 *.webm
