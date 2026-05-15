@@ -1,0 +1,16 @@
+node_modules/
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/.auth/
+*.log
+.DS_Store
+.env
+.env.local
+
+# Loom walkthrough — script + any recorded video.
+# Not required to run the suite; kept locally for the demo only.
+LOOM_SCRIPT.md
+*.mp4
+*.mov
+*.webm
