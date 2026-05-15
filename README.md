@@ -38,9 +38,11 @@ Three real bugs (B-002, B-003, B-004) have tests marked `test.fail()` — Playwr
 
 ## Cookie consent
 
-The SUT loads `https://app.secureprivacy.ai/...` from `index.html`, which injects a banner near the bottom of the viewport. The shared fixture in [`tests/fixtures.ts`](tests/fixtures.ts) calls `window.sp.hideCookieBanner()` after every navigation so subsequent assertions don't hit an overlapping banner. `cookie-consent.spec.ts` verifies the script loads and the dismiss API is wired before the rest of the suite trusts it.
+The SUT loads `https://app.secureprivacy.ai/...` from `index.html`, which injects a banner near the bottom of the viewport. The shared fixture in [`tests/fixtures.ts`](tests/fixtures.ts) runs a dismiss sequence after every navigation. It subscribes to the documented `sp_init` event, calls `sp.hideCookieBanner()`, then verifies `sp.cookieBannerVisible()` returns `false` before the next assertion runs.
 
-If SecurePrivacy is offline or slow, the dismiss soft-fails (3s timeout, swallowed) and the suite continues — the SUT's own logic doesn't gate on consent.
+`cookie-consent.spec.ts` (TC-COOKIE-001) verifies the full lifecycle once. SP's script tag loads. The `sp_init` event fires. Both `hideCookieBanner` and `cookieBannerVisible` are bound on `window.sp`. A `hideCookieBanner()` call drives `cookieBannerVisible()` to return `false` inside a 5s poll budget. An earlier version of this test only asserted the hide method was a function. A broken-but-bound API would have shipped green there.
+
+If SecurePrivacy is offline or slow, the dismiss soft-fails (3s budget, swallowed with a console warning) and the suite continues. The SUT's own logic doesn't gate on consent.
 
 ## Bugs found in the SUT
 
@@ -65,7 +67,7 @@ The short rationale for each non-obvious choice lives in [`docs/DECISIONS.md`](d
 - **Test isolation via fresh `BrowserContext`** (Playwright default). No shared state between tests; `localStorage` starts empty unless the test seeds it.
 - **`test.fail()` for known-broken behaviour** is preferred over deleting/skipping the test or weakening the assertion. The test stays in the suite, asserts the *correct* contract, and flips green automatically when the SUT is fixed — so CI catches both a fresh regression *and* an unannounced fix.
 - **`@axe-core/playwright`** runs on `/` only. Known violations are pinned by rule + target substring in `KNOWN_ISSUES`; removing an entry once the SUT is fixed turns the test into a regression guard.
-- **CI:** [`.github/workflows/playwright.yml`](.github/workflows/playwright.yml) clones the SUT, installs browsers with `--with-deps`, runs the suite under `CI=true` (one retry, 2 workers), uploads the HTML report on failure. **Requires** repo variable `SUT_REPO` set to `owner/name` of the SUT (and optional `SUT_REF`, default `main`); the workflow fails loudly with a setup hint if `SUT_REPO` is unset.
+- **CI:** [`.github/workflows/playwright.yml`](.github/workflows/playwright.yml) clones the SUT, installs browsers with `--with-deps`, runs the suite under `CI=true` (one retry, 2 workers), uploads the HTML report on failure. **Requires** repo variable `SUT_REPO` set to `owner/name` of the SUT (and optional `SUT_REF`, default `main`); the workflow fails loudly with a setup hint if `SUT_REPO` is unset. When the SUT repo is private, also set the `SUT_DEPLOY_KEY` secret to an ed25519 private key whose public half is registered as a **read-only deploy key** on the SUT repo. Full generate/install steps in [`docs/SETUP.md`](docs/SETUP.md).
 
 ## Repo layout
 

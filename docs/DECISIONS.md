@@ -32,6 +32,11 @@ Short rationales for the non-obvious choices in this suite. One bullet per decis
 - **`TC-PROMO-004` asserts an invariant** (`afterPromoTotal <= beforePromoTotal`) over a hardcoded `$52.79` check. Reason: an invariant survives unrelated SUT pricing changes (the test data here is small but the principle scales).
 - **`TC-AUTH-005` asserts on `register-confirm-error`** (the field-level error) over the form-level banner. Reason: field-level pinpoints which field broke, which is what the user-facing error model actually communicates.
 
+## CI
+
+- **Read-only deploy key for the SUT clone** over a fine-grained PAT. Reason: the deploy key registration binds the key to one specific repo, and GitHub enforces the read-only flag at the key level rather than at the token-permissions level. No expiration to rotate either. A fine-grained PAT works (an earlier iteration of the workflow used one), but for a long-lived CI wiring the deploy key has fewer ways to misconfigure. The default `GITHUB_TOKEN` is not an option for a private SUT because GitHub scopes that token to the workflow's own repo. Setup in [`SETUP.md`](SETUP.md#ci-on-github).
+- **Workflow fails loudly at preflight when `SUT_REPO` is unset.** Reason: a missing variable should fail with a clear setup hint. Not silently try to clone a placeholder repo, or burn 90 seconds of CI minutes installing dependencies before noticing.
+
 ## What we cut
 
 - **No visual regression snapshots.** Reason: the cart drawer's `transitionend` state machine and dynamic order IDs make snapshot diffs brittle without more masking work than this is worth in the 1–2h budget.

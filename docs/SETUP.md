@@ -46,3 +46,44 @@ npm run typecheck       # tsc --noEmit, catches type errors before runtime
 ## Topology note
 
 This repo and the SUT live in separate directories. That's a deliberate seam: the suite reviews an app it doesn't own. For a long-term project, prefer collocating tests with the SUT in a single repo and a single CI workflow.
+
+## CI on GitHub
+
+[`.github/workflows/playwright.yml`](../.github/workflows/playwright.yml) runs on push to `main`, on PRs targeting `main`, and on manual `workflow_dispatch`.
+
+### Repo variable (required)
+
+| Name | Example | Purpose |
+| --- | --- | --- |
+| `SUT_REPO` | `owner/example-e-commerce-website` | Where to clone the SUT from |
+| `SUT_REF` | `main` (default) | Optional. Branch/tag/SHA of the SUT to check out |
+
+Set under *Settings → Secrets and variables → Actions → Variables*. If `SUT_REPO` is unset the workflow fails at preflight with an actionable error.
+
+### Deploy key (required when SUT repo is private)
+
+GitHub scopes the default `GITHUB_TOKEN` to the workflow's own repo, so it cannot read a private SUT. Wire a read-only deploy key pinned to the SUT repo:
+
+```bash
+# 1. Generate an ed25519 keypair locally. No passphrase (CI runs non-interactively).
+ssh-keygen -t ed25519 -C "northwind-qa CI" -f /tmp/sut_deploy -N "" -q
+
+# 2. Add the public half to the SUT repo's deploy keys, marked Read-only
+gh repo deploy-key add /tmp/sut_deploy.pub \
+  --repo OWNER/example-e-commerce-website \
+  --title "northwind-qa CI"
+
+# 3. Save the private half as the SUT_DEPLOY_KEY secret on THIS repo.
+#    Piped via stdin so the key never echoes to your terminal or shell history.
+gh secret set SUT_DEPLOY_KEY \
+  --repo OWNER/northwind-qa < /tmp/sut_deploy
+
+# 4. Remove the local keypair
+rm /tmp/sut_deploy /tmp/sut_deploy.pub
+```
+
+Verify with `gh repo deploy-key list --repo OWNER/example-e-commerce-website` (should show one entry marked `read-only`) and `gh secret list --repo OWNER/northwind-qa` (should list `SUT_DEPLOY_KEY`).
+
+If the SUT repo is public, leave `SUT_DEPLOY_KEY` unset. The `ssh-key:` parameter is optional and `actions/checkout` falls back to https + `GITHUB_TOKEN` for any public repo.
+
+The rationale for picking deploy key over a fine-grained PAT is in [`DECISIONS.md`](DECISIONS.md#ci).

@@ -41,7 +41,7 @@ Per-test traceability for the 37 application tests (+1 `setup` project). The sum
 | `TC-CHECKOUT-001` | `checkout.spec.ts` | Happy path: cart → checkout → place order → confirmation (incl. `localStorage` shape assertion) |
 | `TC-CHECKOUT-002` | `checkout.spec.ts` | Empty cart shows `page-checkout-empty` instead of the form |
 | `TC-CHECKOUT-003` | `checkout.spec.ts` | Place order with invalid card number is blocked with validation error |
-| `TC-COOKIE-001` | `cookie-consent.spec.ts` | SecurePrivacy script loads and exposes a callable hide API |
+| `TC-COOKIE-001` | `cookie-consent.spec.ts` | SecurePrivacy full lifecycle: script loads, `sp_init` fires, both `hideCookieBanner` and `cookieBannerVisible` are bound, and post-hide `cookieBannerVisible()` returns `false` within a 5s poll |
 | `TC-A11Y-001` | `a11y.spec.ts` | No new critical/serious axe violations on `/` |
 
 ## Bug → test mapping
