@@ -35,6 +35,16 @@ jobs:
           repository: ${{ vars.SUT_REPO }}
           ref: ${{ vars.SUT_REF || 'main' }}
           path: example-e-commerce-website
+          # SUT lives in a separate repo. When that repo is private, the
+          # default GITHUB_TOKEN cannot read it (its scope is this repo
+          # only). Use a deploy key pinned to the SUT repo:
+          #   1. Generate an ed25519 keypair locally.
+          #   2. Add the public half to the SUT repo's deploy keys
+          #      (Settings -> Deploy keys, read-only).
+          #   3. Save the private half as the SUT_DEPLOY_KEY secret here.
+          # If SUT_DEPLOY_KEY is unset (SUT is public), checkout falls
+          # back to https + GITHUB_TOKEN automatically.
+          ssh-key: ${{ secrets.SUT_DEPLOY_KEY }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
