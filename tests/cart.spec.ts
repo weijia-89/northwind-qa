@@ -101,4 +101,19 @@ test.describe('Cart', () => {
     await expect(cartBadge(page)).toHaveText('1');
     await expect(list.getByTestId(`cart-line-total-${TOTE}`)).toHaveText('$28.00');
   });
+
+  test('[TC-CART-008] anonymous "Proceed to checkout" redirects to /login with redirect param @P0', async ({ page }) => {
+    await page.goto('/products', { waitUntil: 'domcontentloaded' });
+    await addToCartButton(productCardBySlug(page, TOTE)).click();
+
+    await page.goto('/cart', { waitUntil: 'domcontentloaded' });
+    await cartCheckoutButton(page).click();
+
+    await expect(page).toHaveURL(/\/login\?redirect=%2Fcheckout/);
+    // The cart survives the bounce — items live in localStorage, not session state.
+    const cart = await page.evaluate(() =>
+      JSON.parse(window.localStorage.getItem('ec_cart_v1') ?? 'null'),
+    );
+    expect(cart?.items?.length ?? 0).toBe(1);
+  });
 });
