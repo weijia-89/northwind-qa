@@ -4,17 +4,19 @@ import { test, expect } from './fixtures.ts';
 
 // Allowlist for known issues that already have a bug filed. Removing an
 // entry once the SUT fixes the bug turns the test into a regression guard.
-const KNOWN_ISSUES: Array<{ ruleId: string; targetIncludes: string; bug: string }> = [
-  { ruleId: 'color-contrast', targetIncludes: '_logo_', bug: 'B-006' },
+//
+// Match on the failing node's outerHTML rather than CSS selector: Vite
+// hashes CSS module class names, so `_logo_561gc_18` would drift on every
+// rebuild. The brand text "Goods" is stable.
+const KNOWN_ISSUES: Array<{ ruleId: string; htmlIncludes: string; bug: string }> = [
+  { ruleId: 'color-contrast', htmlIncludes: '>Goods<', bug: 'B-006' },
 ];
 
 function isKnown(violation: Result): boolean {
   return KNOWN_ISSUES.some(
     (known) =>
       violation.id === known.ruleId &&
-      violation.nodes.some((node) =>
-        node.target.some((sel) => String(sel).includes(known.targetIncludes)),
-      ),
+      violation.nodes.some((node) => node.html.includes(known.htmlIncludes)),
   );
 }
 
