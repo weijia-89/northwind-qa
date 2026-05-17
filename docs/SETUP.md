@@ -3,19 +3,26 @@
 ## Prerequisites
 
 - **Node 20+**.
-- **npm** (default Node CLI). The SUT pins `pnpm` in `packageManager`, but the test harness boots it via `npm run dev`, which only needs the `dev` script in `package.json`. If you have pnpm installed, override with `E2E_DEV_CMD=pnpm\ dev`.
+- **npm** for this repo. **pnpm** for the SUT (its `packageManager` pin and `pnpm-lock.yaml` make it the canonical install tool). Node 16.13+ ships `corepack`, which can provision pnpm on demand: `corepack enable && corepack prepare pnpm@latest --activate`.
 - The storefront source cloned as a peer directory of this repo (so `../example-e-commerce-website` resolves correctly). Override with `E2E_SUT_DIR` if it lives elsewhere.
+- Playwright still boots the SUT via `npm run dev` by default, which works because the SUT's `dev` script delegates to Vite. Override with `E2E_DEV_CMD=pnpm\ dev` if your SUT's dev script needs pnpm specifically.
 
 ## Install
 
 ```bash
 # In this repo
 npm install
-npm run install:browsers   # downloads Chromium for Playwright
+# That's it. The `pretest` hook in package.json runs `playwright install
+# chromium` automatically the first time you run `npm test`. On Linux CI
+# use `npm run install:browsers` (which adds `--with-deps`) to pull system
+# libraries as well.
 
 # In the SUT (only required once)
 cd ../example-e-commerce-website    # or wherever you cloned it; set E2E_SUT_DIR otherwise
-npm install                          # works against the SUT's package-lock.json
+# Match the SUT's lockfile: `pnpm install --frozen-lockfile` if pnpm-lock.yaml
+# exists (the current case), otherwise `npm ci`. Mixing tools across the
+# pnpm lockfile risks subtly-different dependency versions than CI.
+pnpm install --frozen-lockfile
 ```
 
 ## Run

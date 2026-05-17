@@ -15,7 +15,7 @@ Short rationales for the non-obvious choices in this suite. One bullet per decis
 
 ## Async + third-party
 
-- **`waitForFunction`-based poll for SecurePrivacy** over a fixed `setTimeout` or selector wait. Reason: SP attaches `window.sp` early but injects its banner DOM on a later tick. Calling `hideCookieBanner()` too soon throws a null reference. Polling on a no-throw call is the only stable signal "SP is ready."
+- **Interval poll on `window.sp` plus a `cookieBannerVisible` behaviour check** over a fixed `setTimeout` or selector wait. Reason: SP attaches `window.sp` early but injects its banner DOM on a later tick. Calling `hideCookieBanner()` too soon throws a null reference. Polling until the call lands and `cookieBannerVisible()` returns `false` is the only stable signal "SP is ready and the banner is actually gone." A binding-only check (`typeof hide === 'function'`) would pass a broken-but-bound API.
 - **Fixture wraps `goto` and `reload`** (not just `goto`). Reason: a reload re-injects the banner.
 - **Soft-fail the dismiss if SP is offline** (3s timeout, swallowed). Reason: SP isn't part of any assertion; if the script is blocked, tests should still run.
 - **One dedicated `cookie-consent.spec.ts`** uses the un-wrapped Playwright `test` to verify SP actually loads. Reason: the rest of the suite trusts SP via the fixture; this test removes the abstraction so a broken script doesn't pass silently.
@@ -40,13 +40,13 @@ Short rationales for the non-obvious choices in this suite. One bullet per decis
 
 ## What we cut
 
-- **No visual regression snapshots.** Reason: the cart drawer's `transitionend` state machine and dynamic order IDs make snapshot diffs brittle without more masking work than this is worth in the 1–2h budget.
-- **No `/account` order-history test.** Reason: would extend checkout coverage by ~2 tests with marginal new signal; the persistence is already proven in `TC-CHECKOUT-001` via the localStorage shape.
-- **No broader axe sweep across routes.** Reason: drive-by violations on other routes aren't part of the brief; a per-route a11y suite belongs in a dedicated harness.
+- **No visual regression snapshots.** Reason: the cart drawer's `transitionend` state machine and dynamic order IDs make snapshot diffs brittle without more masking work than this is worth at this scope.
+- **No mobile-viewport project / no cross-browser project.** Reason: brief asks for reliability on a small suite. Add when real analytics show non-Chromium traffic above about 5%.
+- **No `/checkout` a11y sweep.** Reason: auth-gated and form-heavy; needs its own setup. Add when the checkout flow grows beyond the current one-card form (saved-card selection, address autocomplete, etc.).
 
 ## What we'd add next
 
 - `test.fail` for B-005's button-label fix once the SUT adopts the recommended change (sketched in `bugs/B-005-checkout-redirect-ux.md`).
 - B-001 regression test once the SUT exposes a stable "create test product" hook or fixture seed mechanism.
-- `/account` order-history assertion if the route grows more behaviour beyond listing.
+- A persisted-orders shape-validation test mirroring `TC-CART-009` once B-007's fix generalises `readFromStorage` to take an `isValid` predicate. Stops the orders store from diverging into the same fail-open trap.
 - Promo helpers extracted to `lib/helpers.ts` if numeric `dollars()`-style parsing creeps into more specs.
