@@ -71,9 +71,9 @@ test.describe('Promo code', () => {
 
   // Regression guard for B-003: applying a valid promo to a cart that's just
   // over the free-shipping threshold pushes shipping back on and raises the
-  // total. Marked as test.fail() — it will flip green when the SUT fixes the
+  // total. Marked as test.fail(), it will flip green when the SUT fixes the
   // shipping calculation to gate on pre-discount subtotal.
-  test('[TC-PROMO-004] valid promo must never raise the total — B-003 @P0', async ({ page }) => {
+  test('[TC-PROMO-004] valid promo must never raise the total, B-003 @P0', async ({ page }) => {
     test.fail(true, 'B-003: shipping is computed on subtotalAfterDiscount, ' +
       'so WELCOME10 tips a $52 cart below $50 and adds $5.99 shipping.');
 
@@ -99,9 +99,9 @@ test.describe('Promo code', () => {
   });
 
   // Regression guard for B-002: WELCOME10 is locked forever in localStorage,
-  // even after the user removes it and reloads. Marked as test.fail() — flips
+  // even after the user removes it and reloads. Marked as test.fail(), flips
   // green when the SUT switches to sessionStorage or per-order semantics.
-  test('[TC-PROMO-005] reapplying WELCOME10 after removal + reload should work — B-002 @P1', async ({ page }) => {
+  test('[TC-PROMO-005] reapplying WELCOME10 after removal + reload should work, B-002 @P1', async ({ page }) => {
     test.fail(true, 'B-002: ec_promo_used_v1 is permanent across reloads.');
 
     await addToteAndOpenCart(page);
@@ -123,13 +123,51 @@ test.describe('Promo code', () => {
     await expect(promoError(page)).toHaveCount(0);
   });
 
+  // Contract test: per `CartContext.applyPromo`, the SUT normalises the
+  // submitted code via `String(code ?? '').trim().toUpperCase()` before
+  // matching against the promo table. This test pins both halves of
+  // that contract (case and trim) as parameterised cases so a refactor
+  // that drops either half is caught with a named failure.
+  //
+  // Real-world relevance: case-sensitivity bugs ship in production
+  // promo flows constantly, usually as a regression after someone
+  // moves the comparison from `===` to a stricter check that doesn't
+  // re-normalise. Browser autofill also frequently lower-cases the
+  // entered value. Without this guard the regression surfaces as
+  // "promo doesn't work, must be user error" support tickets, not
+  // as a CI failure.
+  for (const variant of ['welcome10', 'Welcome10', '  WELCOME10  ', 'WELCOME10']) {
+    test(`[TC-PROMO-007] WELCOME10 is case- and whitespace-insensitive: "${variant}" @P1`, async ({
+      page,
+    }) => {
+      await addToteAndOpenCart(page);
+
+      await promoInput(page).fill(variant);
+      await promoApply(page).click();
+
+      // The applied-state badge always shows the canonical uppercase
+      // form regardless of input casing, asserting on that catches a
+      // regression where the SUT accepts the variant but displays it
+      // back verbatim (a UX bug that would also break the remove flow).
+      await expect(promoApplied(page)).toContainText('WELCOME10');
+      await expect(promoError(page)).toHaveCount(0);
+
+      // Discount line surfaces the same 10% amount regardless of
+      // input casing; otherwise normalisation regressed on the
+      // discount-calculation path but not the lookup path.
+      await expect(summaryDiscount(page)).toContainText(
+        `−$${(TOTE_PRICE * 0.1).toFixed(2)}`,
+      );
+    });
+  }
+
   // Regression guard for B-004: the "already used" guard only honours an
   // Array-shaped value at ec_promo_used_v1. Any other shape (e.g. {}) is
   // silently accepted and resets the record. Storage shape should be
   // validated; a corrupt value should fail-safe (refuse the promo), not
   // fail-open (treat as fresh). Marked test.fail() until the SUT validates
   // the storage shape.
-  test('[TC-PROMO-006] tampering with ec_promo_used_v1 must not bypass the lock — B-004 @P1', async ({ page }) => {
+  test('[TC-PROMO-006] tampering with ec_promo_used_v1 must not bypass the lock, B-004 @P1', async ({ page }) => {
     test.fail(true, 'B-004: corrupt promo-storage shape is treated as fresh, not as in-use.');
 
     await addToteAndOpenCart(page);
