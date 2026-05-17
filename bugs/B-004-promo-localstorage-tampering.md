@@ -1,4 +1,4 @@
-# B-004 — Trivial localStorage tampering re-enables `WELCOME10`
+# B-004: Trivial localStorage tampering re-enables `WELCOME10`
 
 The "already used" guard reads `ec_promo_used_v1` and only honours an `Array.isArray(used)` value. Any other shape is silently accepted: the guard skips, the spread `[...(Array.isArray(used) ? used : []), PROMO_CODE]` resets the record back to a clean single-entry list, and the user gets to redeem `WELCOME10` again.
 

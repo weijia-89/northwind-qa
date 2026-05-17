@@ -1,4 +1,4 @@
-# B-006 — Header logo "Goods" fails WCAG 2 AA color contrast
+# B-006: Header logo "Goods" fails WCAG 2 AA color contrast
 
 Discovered by `tests/a11y.spec.ts` (axe-core). Affects every route since the header is shared.
 
@@ -32,7 +32,7 @@ The "Goods" span should pass 3:1 against its background. Cheapest fix: pick a da
 ```css
 /* Header.module.css */
 .logo span {
-  color: #b45309; /* was #fbbf24 — fails WCAG 2 AA */
+  color: #b45309; /* was #fbbf24, fails WCAG 2 AA */
 }
 ```
 

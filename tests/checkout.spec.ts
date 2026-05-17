@@ -28,7 +28,7 @@ async function fillPayment(page: Page, card: string) {
   await page.getByLabel('CVC').fill(TEST_CVC);
 }
 
-test.describe('Checkout — authenticated', () => {
+test.describe('Checkout, authenticated', () => {
   test('[TC-CHECKOUT-001] Happy path: cart → checkout → place order → confirmation @P0', async ({
     page,
   }) => {

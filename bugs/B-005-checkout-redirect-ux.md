@@ -1,6 +1,6 @@
-# B-005 — Anonymous checkout flow surprises the user with a login wall
+# B-005: Anonymous checkout flow surprises the user with a login wall
 
-An anonymous user with items in their cart clicks "Proceed to checkout" on `/cart`. `CartPage` calls `navigate('/checkout')`. `ProtectedRoute` then redirects them to `/login?redirect=%2Fcheckout` with no warning. The cart contents survive (good — they're in localStorage), but the user's mental model breaks: they expected a checkout form, they got a login form.
+An anonymous user with items in their cart clicks "Proceed to checkout" on `/cart`. `CartPage` calls `navigate('/checkout')`. `ProtectedRoute` then redirects them to `/login?redirect=%2Fcheckout` with no warning. The cart contents survive (good, they're in localStorage), but the user's mental model breaks: they expected a checkout form, they got a login form.
 
 ## Reproduction
 
