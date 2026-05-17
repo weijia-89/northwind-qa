@@ -47,7 +47,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-auth',
-      testMatch: /checkout\.spec\.ts$/,
+      testMatch: /(checkout|account)\.spec\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: '.auth/user.json',
