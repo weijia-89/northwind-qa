@@ -101,6 +101,12 @@ test.describe('Promo code', () => {
   // Regression guard for B-002: WELCOME10 is locked forever in localStorage,
   // even after the user removes it and reloads. Marked as test.fail(), flips
   // green when the SUT switches to sessionStorage or per-order semantics.
+  //
+  // Scaffolding (apply, remove, reload) is exercised without assertions
+  // because the first-apply and remove contracts are owned by TC-PROMO-001
+  // and TC-PROMO-003. Keeping setup unasserted means a regression in those
+  // upstream contracts surfaces in their own tests, not as a false-positive
+  // "expected B-002 failure" here.
   test('[TC-PROMO-005] reapplying WELCOME10 after removal + reload should work, B-002 @P1', async ({ page }) => {
     test.fail(true, 'B-002: ec_promo_used_v1 is permanent across reloads.');
 
@@ -108,17 +114,15 @@ test.describe('Promo code', () => {
 
     await promoInput(page).fill('WELCOME10');
     await promoApply(page).click();
-    await expect(promoApplied(page)).toBeVisible();
     await promoRemove(page).click();
-    await expect(promoApplied(page)).toHaveCount(0);
-
     await page.reload({ waitUntil: 'domcontentloaded' });
 
+    // Contract: re-applying after removal + reload must succeed. Today
+    // promoError surfaces "Code already used this session" and these two
+    // assertions both fail. When the SUT fixes the lock semantics, both
+    // assertions pass and the test flips green via test.fail().
     await promoInput(page).fill('WELCOME10');
     await promoApply(page).click();
-
-    // Today: promoError surfaces "Code already used this session". After fix:
-    // promoApplied returns. The two assertions together make this a clean flip.
     await expect(promoApplied(page)).toBeVisible();
     await expect(promoError(page)).toHaveCount(0);
   });
@@ -167,15 +171,17 @@ test.describe('Promo code', () => {
   // validated; a corrupt value should fail-safe (refuse the promo), not
   // fail-open (treat as fresh). Marked test.fail() until the SUT validates
   // the storage shape.
+  //
+  // Scaffolding (first apply + remove) is unasserted. The first-apply
+  // contract is owned by TC-PROMO-001 and remove by TC-PROMO-003. A
+  // regression in either of those will fail its own test, not this one.
   test('[TC-PROMO-006] tampering with ec_promo_used_v1 must not bypass the lock, B-004 @P1', async ({ page }) => {
     test.fail(true, 'B-004: corrupt promo-storage shape is treated as fresh, not as in-use.');
 
     await addToteAndOpenCart(page);
 
-    // First apply succeeds and writes the lock.
     await promoInput(page).fill('WELCOME10');
     await promoApply(page).click();
-    await expect(promoApplied(page)).toBeVisible();
     await promoRemove(page).click();
 
     // Simulate the DevTools tampering described in the bug report.
@@ -183,8 +189,9 @@ test.describe('Promo code', () => {
       window.localStorage.setItem('ec_promo_used_v1', '{}');
     });
 
-    // Re-apply. Today the SUT accepts it (fail-open). The fix is to reject
-    // any non-array shape with a clear error.
+    // Contract: corrupt storage shape must fail-safe. Today the SUT
+    // accepts the re-apply (fail-open) and these two assertions fail.
+    // When the SUT validates the shape, both pass and the test flips.
     await promoInput(page).fill('WELCOME10');
     await promoApply(page).click();
     await expect(promoError(page)).toBeVisible();
