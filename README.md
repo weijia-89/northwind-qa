@@ -1,6 +1,6 @@
 # northwind-qa
 
-Playwright E2E suite for the Northwind Goods storefront — a React 19 + Vite e-commerce SPA with no real backend (everything persists via `localStorage`).
+Playwright E2E suite for the Northwind Goods storefront, a React 19 + Vite e-commerce SPA with no real backend (everything persists via `localStorage`).
 
 ## Quick start
 
@@ -10,13 +10,13 @@ npm test          # pretest hook installs the Chromium build, then runs the suit
 npm run typecheck # tsc --noEmit; catches type errors before runtime
 ```
 
-The SUT (Northwind Goods storefront) must be cloned alongside this repo as `../example-e-commerce-website` and have its dependencies installed — Playwright boots it via the `webServer` block in `playwright.config.ts`. Override the path with `E2E_SUT_DIR=/path/to/sut` if you keep it somewhere else. Full env-var list is in [`docs/SETUP.md`](docs/SETUP.md).
+The SUT (Northwind Goods storefront) must be cloned alongside this repo as `../example-e-commerce-website` and have its dependencies installed, Playwright boots it via the `webServer` block in `playwright.config.ts`. Override the path with `E2E_SUT_DIR=/path/to/sut` if you keep it somewhere else. Full env-var list is in [`docs/SETUP.md`](docs/SETUP.md).
 
 On Linux CI, `npm run install:browsers` (with `--with-deps`) is the way to also pull system libraries; the local `pretest` keeps it lean.
 
 ## What's covered
 
-37 application tests + 1 auth setup. 34 pass outright; 3 are `test.fail()` regression guards (B-002, B-003, B-004) that flip green when the SUT is fixed. Whole suite runs in ~15s locally on a warm cache. Single Chromium project for anonymous flows + a second project for authenticated checkout that consumes storage state from `auth.setup.ts`.
+50 application tests + 1 auth setup. 45 pass outright; 5 are `test.fail()` regression guards (B-002, B-003, B-004, plus the two shape-failure cases of B-007) that flip green when the SUT is fixed. Whole suite runs in under 20 seconds locally (16–18s on a warm cache, slightly longer cold). Single Chromium project for anonymous flows + a second project for authenticated checkout and account that consumes storage state from `auth.setup.ts`.
 
 | File | Tests | Covers |
 | --- | --- | --- |
@@ -24,18 +24,19 @@ On Linux CI, `npm run install:browsers` (with `--with-deps`) is the way to also 
 | `tests/home.spec.ts` | 2 | Hero, category tiles, featured grid, CTA navigation |
 | `tests/product-list.spec.ts` | 5 | Default, category filter, search, empty state, sort |
 | `tests/product-detail.spec.ts` | 5 | Render, in-stock, OOS, apparel size+qty, unknown slug |
-| `tests/cart.spec.ts` | 8 | Add, drawer, persist, increment/decrement, remove-last, remove-mid, anonymous-checkout redirect |
-| `tests/promo.spec.ts` | 6 | `WELCOME10` math, invalid code, removal, B-003 / B-002 / B-004 regression guards (`test.fail`) |
+| `tests/cart.spec.ts` | 11 | Add, drawer, persist, qty math, remove-last, remove-mid, anonymous-checkout redirect, fail-safe on 3 storage corruption shapes (B-007 `test.fail` x2) |
+| `tests/promo.spec.ts` | 10 | `WELCOME10` math, invalid code, removal, case- and whitespace-insensitivity (4 variants), B-003 / B-002 / B-004 regression guards (`test.fail`) |
 | `tests/auth.spec.ts` | 6 | Login ✓/✗, register ✓, register password-mismatch, register duplicate-email, logout |
 | `tests/checkout.spec.ts` | 3 | Happy path (with localStorage shape assertion), empty cart, invalid card |
+| `tests/account.spec.ts` | 3 | Order history rendering, multi-user filter, empty state |
 | `tests/cookie-consent.spec.ts` | 1 | SecurePrivacy script loads + dismiss API works |
-| `tests/a11y.spec.ts` | 1 | No new critical/serious axe violations on `/` |
+| `tests/a11y.spec.ts` | 3 | No new critical/serious axe violations on `/`, `/products`, `/cart` |
 
-Per-test traceability and the bug-to-test mapping live in [`docs/COVERAGE.md`](docs/COVERAGE.md).
+Per-test traceability and the bug-to-test mapping live in [`docs/COVERAGE.md`](docs/COVERAGE.md). The framework that decides which tier each test belongs to and when a new test deserves to exist lives in [`docs/TEST_STRATEGY.md`](docs/TEST_STRATEGY.md).
 
 ### Regression guards (`test.fail`)
 
-Three real bugs (B-002, B-003, B-004) have tests marked `test.fail()` — Playwright treats them as **expected** to fail today, so they don't break the suite, but they automatically flip green when each SUT fix lands. CI catches a regression in either direction.
+Five tests covering four real bugs (B-002, B-003, B-004, B-007) are marked `test.fail()`, Playwright treats them as **expected** to fail today, so they don't break the suite, but they automatically flip green when each SUT fix lands. CI catches a regression in either direction.
 
 ## Cookie consent
 
@@ -47,7 +48,7 @@ If SecurePrivacy is offline or slow, the dismiss soft-fails (3s budget, swallowe
 
 ## Bugs found in the SUT
 
-6 bug reports under [`bugs/`](bugs/) with reproduction steps and a suggested fix.
+7 bug reports under [`bugs/`](bugs/) with reproduction steps and a suggested fix.
 
 | | Summary | Regression test |
 | --- | --- | --- |
@@ -57,6 +58,7 @@ If SecurePrivacy is offline or slow, the dismiss soft-fails (3s budget, swallowe
 | [B-004](bugs/B-004-promo-localstorage-tampering.md) | Trivial `localStorage` tampering re-enables `WELCOME10` | `TC-PROMO-006` (`test.fail`) |
 | [B-005](bugs/B-005-checkout-redirect-ux.md) | Anonymous "Proceed to checkout" silently redirects to `/login` with no warning | `TC-CART-008` asserts the redirect |
 | [B-006](bugs/B-006-logo-color-contrast.md) | Header logo "Goods" fails WCAG 2 AA contrast (1.66:1, needs 3:1) | `TC-A11Y-001` via `KNOWN_ISSUES` allowlist |
+| [B-007](bugs/B-007-cart-storage-shape-validation.md) | `ec_cart_v1` is read back with `as T` but no runtime shape check; non-array `items` or non-object root crashes the cart on every page load | `TC-CART-009` (`test.fail` x2 for the two failing shapes; the invalid-JSON case passes) |
 
 ## Design notes
 
@@ -66,7 +68,7 @@ The short rationale for each non-obvious choice lives in [`docs/DECISIONS.md`](d
 - **Locator priority:** role / label / text > testId > CSS, centralised in [`lib/locators.ts`](lib/locators.ts). `getByTestId` is reserved for elements without a useful role or label (the promo input, the cart-badge, internal cart-line testIds).
 - **No `waitForTimeout` or `networkidle`.** Auto-waiting actions and `expect.toBe*` assertions only.
 - **Test isolation via fresh `BrowserContext`** (Playwright default). No shared state between tests; `localStorage` starts empty unless the test seeds it.
-- **`test.fail()` for known-broken behaviour** is preferred over deleting/skipping the test or weakening the assertion. The test stays in the suite, asserts the *correct* contract, and flips green automatically when the SUT is fixed — so CI catches both a fresh regression *and* an unannounced fix.
+- **`test.fail()` for known-broken behaviour** is preferred over deleting/skipping the test or weakening the assertion. The test stays in the suite, asserts the *correct* contract, and flips green automatically when the SUT is fixed, so CI catches both a fresh regression *and* an unannounced fix.
 - **`@axe-core/playwright`** runs on `/` only. Known violations are pinned by rule + target substring in `KNOWN_ISSUES`; removing an entry once the SUT is fixed turns the test into a regression guard.
 - **CI:** [`.github/workflows/playwright.yml`](.github/workflows/playwright.yml) clones the SUT, installs browsers with `--with-deps`, runs the suite under `CI=true` (one retry, 2 workers), uploads the HTML report on failure. **Requires** repo variable `SUT_REPO` set to `owner/name` of the SUT (and optional `SUT_REF`, default `main`); the workflow fails loudly with a setup hint if `SUT_REPO` is unset. When the SUT repo is private, also set the `SUT_DEPLOY_KEY` secret to an ed25519 private key whose public half is registered as a **read-only deploy key** on the SUT repo. Full generate/install steps in [`docs/SETUP.md`](docs/SETUP.md).
 

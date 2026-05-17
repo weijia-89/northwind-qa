@@ -1,6 +1,6 @@
 # Test data
 
-The storefront has no backend — products are hardcoded, users/cart/orders persist in `localStorage`. All test fixtures referenced below come from the SUT source, not seeded by this suite.
+The storefront has no backend, products are hardcoded, users/cart/orders persist in `localStorage`. All test fixtures referenced below come from the SUT source, not seeded by this suite.
 
 ## Demo user (auto-seeded)
 
@@ -23,7 +23,7 @@ Defined in `src/context/CartContext.tsx:45-46`.
 
 ## Free shipping threshold
 
-`$50.00` — defined in `src/context/CartContext.tsx:43`. Sub-threshold orders pay `$5.99` standard shipping.
+`$50.00`, defined in `src/context/CartContext.tsx:43`. Sub-threshold orders pay `$5.99` standard shipping.
 
 ## Test card (checkout happy path)
 
@@ -33,7 +33,7 @@ Defined in `src/context/CartContext.tsx:45-46`.
 | Expiry | `12/30` |
 | CVC | `123` |
 
-Per the comment at `src/utils/validators.ts:35` — the validator is Luhn-style and accepts the standard Stripe test card. Any Luhn-valid number works; this is the documented one.
+Per the comment at `src/utils/validators.ts:35`, the validator is Luhn-style and accepts the standard Stripe test card. Any Luhn-valid number works; this is the documented one.
 
 ## Stable product fixtures
 
@@ -63,4 +63,4 @@ Out-of-stock fixtures (button is `disabled`):
 
 Each Playwright test runs in a fresh `BrowserContext`, so `localStorage` and `sessionStorage` start empty. Tests that need pre-loaded auth opt in via the `chromium-auth` project, which loads `.auth/user.json` (produced by `tests/auth.setup.ts`).
 
-If a test needs to seed pre-existing cart/promo state, use `addInitScript` *inside that test*, not in the shared fixture — see `tests/fixtures.ts` for why the shared fixture deliberately doesn't clear storage.
+If a test needs to seed pre-existing cart/promo state, use `addInitScript` *inside that test*, not in the shared fixture, see `tests/fixtures.ts` for why the shared fixture deliberately doesn't clear storage.

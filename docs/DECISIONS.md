@@ -5,7 +5,7 @@ Short rationales for the non-obvious choices in this suite. One bullet per decis
 ## Suite topology
 
 - **Single Chromium project for anon + a second project for auth checkout** over a single project with per-test login. Reason: the brief asks for "no flaky tests" and Playwright's storage-state pattern eliminates 3 redundant logins per checkout run, cutting both runtime and surface area for flake.
-- **Setup project produces `.auth/user.json`** over running the login inline in `beforeAll`. Reason: setup runs once, the auth project depends on it, and the file is gitignored — no shared mutable state, no order-dependence between checkout tests.
+- **Setup project produces `.auth/user.json`** over running the login inline in `beforeAll`. Reason: setup runs once, the auth project depends on it, and the file is gitignored, no shared mutable state, no order-dependence between checkout tests.
 - **No mobile-viewport project / no cross-browser project.** Reason: brief asks for reliability + a small well-crafted suite. Cross-browser and mobile add CI cost and surface area without much new signal for an SPA at this scope.
 
 ## Locators
@@ -22,9 +22,10 @@ Short rationales for the non-obvious choices in this suite. One bullet per decis
 
 ## Bug regression strategy
 
-- **`test.fail()` for B-002, B-003, and B-004** over deleting the test, skipping with `test.skip`, or weakening the assertion to match the buggy behaviour. Reason: `test.fail` asserts the *correct* contract, lets Playwright report today's failure as expected, and flips the test green automatically when the SUT is fixed. Catches regressions in both directions.
-- **a11y `KNOWN_ISSUES` allowlist for B-006** over `test.fail` on the whole a11y run or an inline `expect.toBe(violation.length, 1)`. Reason: the allowlist is keyed on rule ID + target substring, so fixing the contrast and removing the offending CSS class auto-disables the entry. Same flip-green pattern, scoped to one rule.
+- **`test.fail()` for B-002, B-003, B-004, and B-007** over deleting the test, skipping with `test.skip`, or weakening the assertion to match the buggy behaviour. Reason: `test.fail` asserts the *correct* contract, lets Playwright report today's failure as expected, and flips the test green automatically when the SUT is fixed. Catches regressions in both directions.
+- **a11y `KNOWN_ISSUES` allowlist for B-006** over `test.fail` on the whole a11y run or an inline `expect.toBe(violation.length, 1)`. Reason: the allowlist is keyed on rule ID + target substring, so fixing the contrast and removing the offending CSS class auto-disables the entry. Same flip-green pattern, scoped to one rule. The allowlist composes across the three a11y route tests (`TC-A11Y-001/002/003`) because the failing header element renders everywhere; one allowlist entry covers all three.
 - **B-001 documented only**, no failing test. Reason: reproduction needs `stockCount=0 / inStock=true` data, which lives in the SUT's `src/data/products.ts` and isn't reachable from the test harness without a route-level mutation hook. Worth filing; not worth a brittle workaround.
+- **B-007's parameterised loop with per-case `test.fail()` flags** over three separate test functions. Reason: B-007 is one bug class with three concrete inputs; the loop keeps the contract assertion (fail-safe behaviour) declared exactly once, while the per-case `if (bug) test.fail(...)` flag lets the passing case (`'{not-json'`) and the failing cases (`'"hello"'`, `'{"items":"oops"}'`) share the same test body. When the SUT lands shape validation, removing the two `bug: 'B-007'` entries flips both cases green without rewriting the test.
 
 ## Assertion shape
 
