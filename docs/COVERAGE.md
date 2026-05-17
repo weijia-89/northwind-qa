@@ -1,6 +1,6 @@
 # Coverage
 
-Per-test traceability for the 50 application tests (+1 `setup` project). The summary table in [`../README.md`](../README.md) is the high-level view; this file is the per-ID index a hostile reviewer can grep against the running suite.
+Per-test traceability for the 51 application tests (+1 `setup` project). The summary table in [`../README.md`](../README.md) is the high-level view; this file is the per-ID index a hostile reviewer can grep against the running suite.
 
 ## Test index
 
@@ -26,9 +26,10 @@ Per-test traceability for the 50 application tests (+1 `setup` project). The sum
 | `TC-CART-006` | `cart.spec.ts` | Removing one of two lines leaves the other intact |
 | `TC-CART-007` | `cart.spec.ts` | Decrement qty reduces badge and line total |
 | `TC-CART-008` | `cart.spec.ts` | Anonymous "Proceed to checkout" redirects to `/login` with `redirect=%2Fcheckout` |
-| `TC-CART-009` (`invalid JSON`) | `cart.spec.ts` | Cart fail-safes when `ec_cart_v1` is unparseable JSON: empty placeholder, no badge, no alert, cart still functional after recovery |
+| `TC-CART-009` (`invalid JSON`) | `cart.spec.ts` | Cart fail-safes when `ec_cart_v1` is unparseable JSON: empty placeholder, no badge, no alert |
 | `TC-CART-009` (`wrong root shape`) | `cart.spec.ts` | **`test.fail`**, `ec_cart_v1='"hello"'` should fail-safe; today's SUT crashes (B-007) |
 | `TC-CART-009` (`wrong items shape`) | `cart.spec.ts` | **`test.fail`**, `ec_cart_v1='{"items":"oops"}'` should fail-safe; today's SUT crashes (B-007) |
+| `TC-CART-010` | `cart.spec.ts` | After a corrupt-cart fail-safe path runs, a normal add still works (catches a regression where corruption locks the store read-only) |
 | `TC-PROMO-001` | `promo.spec.ts` | `WELCOME10` applies 10% discount |
 | `TC-PROMO-002` | `promo.spec.ts` | Invalid promo code surfaces an error |
 | `TC-PROMO-003` | `promo.spec.ts` | Removing an applied promo restores the original total |
@@ -63,7 +64,7 @@ Per-test traceability for the 50 application tests (+1 `setup` project). The sum
 | **B-004** localStorage tampering | `TC-PROMO-006` (`test.fail`) | Overwrites `ec_promo_used_v1` with `'{}'` via `page.evaluate` and re-applies `WELCOME10`. Asserts the SUT should fail-safe (reject corrupt shape), today it fail-opens (resets the record and accepts the promo) |
 | **B-005** anonymous checkout UX | `TC-CART-008` | Asserts the redirect behaviour + cart-survives. The UX recommendation (button label change) is documented in the bug report; the SUT-side fix is the contract change |
 | **B-006** logo color contrast | `TC-A11Y-001/002/003` | Surfaced by axe on every route since the header renders everywhere; allowlisted via `KNOWN_ISSUES`. Removing the allowlist entry once the SUT fixes the contrast turns all three a11y tests into regression guards |
-| **B-007** cart storage shape validation | `TC-CART-009` (`test.fail` x2) | Two of three corruption shapes (`'"hello"'`, `'{"items":"oops"}'`) bypass the existing try/catch because JSON.parse succeeds and `readFromStorage` casts the malformed value through `as T`. Discovered by running the parameterised loop; the third case (`'{not-json'`) passes because it triggers the existing JSON.parse catch. |
+| **B-007** cart storage shape validation | `TC-CART-009` (`test.fail` x2), `TC-CART-010` recovery | Two of three corruption shapes (`'"hello"'`, `'{"items":"oops"}'`) bypass the existing try/catch because JSON.parse succeeds and `readFromStorage` casts the malformed value through `as T`. Discovered by running the parameterised loop; the third case (`'{not-json'`) passes because it triggers the existing JSON.parse catch. `TC-CART-010` guards the recovery contract: a fail-safe must not lock the store read-only. |
 
 ## Known gaps (intentional)
 

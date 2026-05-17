@@ -16,7 +16,7 @@ On Linux CI, `npm run install:browsers` (with `--with-deps`) is the way to also 
 
 ## What's covered
 
-50 application tests + 1 auth setup. 45 pass outright; 5 are `test.fail()` regression guards (B-002, B-003, B-004, plus the two shape-failure cases of B-007) that flip green when the SUT is fixed. Whole suite runs in under 20 seconds locally (16–18s on a warm cache, slightly longer cold). Single Chromium project for anonymous flows + a second project for authenticated checkout and account that consumes storage state from `auth.setup.ts`.
+51 application tests + 1 auth setup. 46 pass outright; 5 are `test.fail()` regression guards (B-002, B-003, B-004, plus the two shape-failure cases of B-007) that flip green when the SUT is fixed. Whole suite runs in under 20 seconds locally (16–18s on a warm cache, slightly longer cold). Single Chromium project for anonymous flows + a second project for authenticated checkout and account that consumes storage state from `auth.setup.ts`.
 
 | File | Tests | Covers |
 | --- | --- | --- |
@@ -24,7 +24,7 @@ On Linux CI, `npm run install:browsers` (with `--with-deps`) is the way to also 
 | `tests/home.spec.ts` | 2 | Hero, category tiles, featured grid, CTA navigation |
 | `tests/product-list.spec.ts` | 5 | Default, category filter, search, empty state, sort |
 | `tests/product-detail.spec.ts` | 5 | Render, in-stock, OOS, apparel size+qty, unknown slug |
-| `tests/cart.spec.ts` | 11 | Add, drawer, persist, qty math, remove-last, remove-mid, anonymous-checkout redirect, fail-safe on 3 storage corruption shapes (B-007 `test.fail` x2) |
+| `tests/cart.spec.ts` | 12 | Add, drawer, persist, qty math, remove-last, remove-mid, anonymous-checkout redirect, fail-safe on 3 storage corruption shapes (B-007 `test.fail` x2), recovery after corruption |
 | `tests/promo.spec.ts` | 10 | `WELCOME10` math, invalid code, removal, case- and whitespace-insensitivity (4 variants), B-003 / B-002 / B-004 regression guards (`test.fail`) |
 | `tests/auth.spec.ts` | 6 | Login ✓/✗, register ✓, register password-mismatch, register duplicate-email, logout |
 | `tests/checkout.spec.ts` | 3 | Happy path (with localStorage shape assertion), empty cart, invalid card |
