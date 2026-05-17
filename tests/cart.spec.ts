@@ -117,6 +117,18 @@ test.describe('Cart', () => {
     expect(cart?.items?.length ?? 0).toBe(1);
   });
 
+  // Seed a corrupt `ec_cart_v1` value, then reload so the React tree
+  // re-reads localStorage on mount. Visit `/` first so the storage
+  // write is bound to the SUT origin.
+  async function seedCorruptCart(page: import('@playwright/test').Page, raw: string) {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(
+      ([blob]: [string]) => window.localStorage.setItem('ec_cart_v1', blob),
+      [raw] as [string],
+    );
+    await page.reload({ waitUntil: 'domcontentloaded' });
+  }
+
   // Contract: cart hydration must fail-safe on corrupted `ec_cart_v1`.
   // Parameterised over three shapes so the failure message names the
   // specific input. "invalid JSON" passes today; the two valid-JSON
@@ -137,19 +149,7 @@ test.describe('Cart', () => {
             'the reducer then operates on it (e.g. .items.map on a string) and crashes.',
         );
       }
-      // Seed the corruption against the SUT origin BEFORE the cart-page
-      // navigation that will read it. Visit / first so localStorage is
-      // bound to the SUT origin.
-      await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await page.evaluate(
-        ([raw]: [string]) => window.localStorage.setItem('ec_cart_v1', raw),
-        [blob] as [string],
-      );
-
-      // Reload so the React tree re-reads localStorage on mount. Without
-      // this the in-memory cart state from the / navigation would mask
-      // the corruption.
-      await page.reload({ waitUntil: 'domcontentloaded' });
+      await seedCorruptCart(page, blob);
       await page.goto('/cart', { waitUntil: 'domcontentloaded' });
 
       // Fail-safe contract: empty placeholder, no badge, no user-facing
@@ -157,15 +157,23 @@ test.describe('Cart', () => {
       // surfaces a crash banner would pass the first two assertions.
       await expect(cartEmptyPlaceholder(page)).toBeVisible();
       await expect(cartBadge(page)).toHaveCount(0);
-      // No user-visible error: SUT has no global error boundary banner,
-      // so any role="alert" on this route would be a fail-open leak.
       await expect(page.getByRole('alert')).toHaveCount(0);
-
-      // Recovery: a normal add still works, i.e. the fail-safe path
-      // doesn't lock the store into a read-only state.
-      await page.goto('/products', { waitUntil: 'domcontentloaded' });
-      await addToCartButton(productCardBySlug(page, TOTE)).click();
-      await expect(cartBadge(page)).toHaveText('1');
     });
   }
+
+  // Separate test: after the fail-safe path runs, a normal add still
+  // works. Catches a regression where the corruption path locks the
+  // store into a read-only state. Uses the "invalid JSON" case so the
+  // recovery assertion isn't coupled to B-007's failing shapes.
+  test('[TC-CART-010] cart recovers from a corrupt blob: normal add still works @P0', async ({
+    page,
+  }) => {
+    await seedCorruptCart(page, '{not-json');
+    await page.goto('/cart', { waitUntil: 'domcontentloaded' });
+    await expect(cartEmptyPlaceholder(page)).toBeVisible();
+
+    await page.goto('/products', { waitUntil: 'domcontentloaded' });
+    await addToCartButton(productCardBySlug(page, TOTE)).click();
+    await expect(cartBadge(page)).toHaveText('1');
+  });
 });
