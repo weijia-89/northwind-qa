@@ -1,6 +1,6 @@
 # Coverage
 
-Per-test traceability for the 51 application tests (+1 `setup` project). The summary table in [`../README.md`](../README.md) is the high-level view; this file is the per-ID index a hostile reviewer can grep against the running suite.
+Per-test traceability for the 50 application tests + 1 `setup` project (51 entries in `--list`). The summary table in [`../README.md`](../README.md) is the high-level view; this file is the per-ID index a hostile reviewer can grep against the running suite.
 
 ## Test index
 

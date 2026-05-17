@@ -16,7 +16,7 @@ On Linux CI, `npm run install:browsers` (with `--with-deps`) is the way to also 
 
 ## What's covered
 
-51 application tests + 1 auth setup. 46 pass outright; 5 are `test.fail()` regression guards (B-002, B-003, B-004, plus the two shape-failure cases of B-007) that flip green when the SUT is fixed. Whole suite runs in under 20 seconds locally (16–18s on a warm cache, slightly longer cold). Single Chromium project for anonymous flows + a second project for authenticated checkout and account that consumes storage state from `auth.setup.ts`.
+50 application tests + 1 auth setup project (51 entries in `--list`). 45 pass outright; 5 are `test.fail()` regression guards (B-002, B-003, B-004, plus the two shape-failure cases of B-007) that flip green when the SUT is fixed. Whole suite runs in 15–18 seconds locally on a warm cache (slightly longer cold). Single Chromium project for anonymous flows + a second project for authenticated checkout and account that consumes storage state from `auth.setup.ts`.
 
 | File | Tests | Covers |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ Five tests covering four real bugs (B-002, B-003, B-004, B-007) are marked `test
 
 ## Cookie consent
 
-The SUT loads `https://app.secureprivacy.ai/...` from `index.html`, which injects a banner near the bottom of the viewport. The shared fixture in [`tests/fixtures.ts`](tests/fixtures.ts) runs a dismiss sequence after every navigation. It subscribes to the documented `sp_init` event, calls `sp.hideCookieBanner()`, then verifies `sp.cookieBannerVisible()` returns `false` before the next assertion runs.
+The SUT loads `https://app.secureprivacy.ai/...` from `index.html`, which injects a banner near the bottom of the viewport. The shared fixture in [`tests/fixtures.ts`](tests/fixtures.ts) runs a dismiss sequence after every navigation. It polls `window.sp` until `hideCookieBanner` is callable, calls it, then verifies `cookieBannerVisible()` returns `false` before the next assertion runs. Polling (rather than subscribing to `sp_init`) covers the case where the event has already fired before the fixture attaches its listener; `cookie-consent.spec.ts` does subscribe to `sp_init` and asserts the full lifecycle once.
 
 `cookie-consent.spec.ts` (TC-COOKIE-001) verifies the full lifecycle once. SP's script tag loads. The `sp_init` event fires. Both `hideCookieBanner` and `cookieBannerVisible` are bound on `window.sp`. A `hideCookieBanner()` call drives `cookieBannerVisible()` to return `false` inside a 5s poll budget. An earlier version of this test only asserted the hide method was a function. A broken-but-bound API would have shipped green there.
 
@@ -69,7 +69,7 @@ The short rationale for each non-obvious choice lives in [`docs/DECISIONS.md`](d
 - **No `waitForTimeout` or `networkidle`.** Auto-waiting actions and `expect.toBe*` assertions only.
 - **Test isolation via fresh `BrowserContext`** (Playwright default). No shared state between tests; `localStorage` starts empty unless the test seeds it.
 - **`test.fail()` for known-broken behaviour** is preferred over deleting/skipping the test or weakening the assertion. The test stays in the suite, asserts the *correct* contract, and flips green automatically when the SUT is fixed, so CI catches both a fresh regression *and* an unannounced fix.
-- **`@axe-core/playwright`** runs on `/` only. Known violations are pinned by rule + target substring in `KNOWN_ISSUES`; removing an entry once the SUT is fixed turns the test into a regression guard.
+- **`@axe-core/playwright`** runs on `/`, `/products`, and `/cart` (with items). Known violations are pinned by rule + node-HTML substring (not Vite-hashed CSS class) in `KNOWN_ISSUES`; the header's `>Goods<` text is stable, so one allowlist entry covers all three routes. Removing the entry once the SUT fixes the contrast turns all three a11y tests into regression guards.
 - **CI:** [`.github/workflows/playwright.yml`](.github/workflows/playwright.yml) clones the SUT, installs browsers with `--with-deps`, runs the suite under `CI=true` (one retry, 2 workers), uploads the HTML report on failure. **Requires** repo variable `SUT_REPO` set to `owner/name` of the SUT (and optional `SUT_REF`, default `main`); the workflow fails loudly with a setup hint if `SUT_REPO` is unset. When the SUT repo is private, also set the `SUT_DEPLOY_KEY` secret to an ed25519 private key whose public half is registered as a **read-only deploy key** on the SUT repo. Full generate/install steps in [`docs/SETUP.md`](docs/SETUP.md).
 
 ## Repo layout
@@ -82,9 +82,10 @@ northwind-qa/
 │   ├── fixtures.ts
 │   ├── auth.setup.ts
 │   ├── *.spec.ts
-├── bugs/                       # 6 reports
+├── bugs/                       # 7 reports
 ├── docs/
 │   ├── SETUP.md
+│   ├── TEST_STRATEGY.md
 │   ├── TEST_DATA.md
 │   ├── COVERAGE.md
 │   └── DECISIONS.md
