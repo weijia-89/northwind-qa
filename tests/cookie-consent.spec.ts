@@ -1,5 +1,5 @@
 // This test deliberately uses the un-wrapped Playwright `test` so the
-// shared fixture isn't auto-dismissing the banner — this is the one
+// shared fixture isn't auto-dismissing the banner, this is the one
 // place we want to drive SP's lifecycle ourselves and assert the
 // vendor-promised contract holds.
 //
@@ -26,7 +26,7 @@ test('[TC-COOKIE-001] SecurePrivacy initialises, hide API is callable, and the b
   );
   expect(scripts.some((src) => src.includes('app.secureprivacy.ai'))).toBe(true);
 
-  // 2) Wait for the `sp_init` event — SP's documented "ready" signal —
+  // 2) Wait for the `sp_init` event, SP's documented "ready" signal,
   //    OR for `window.sp` to be present (whichever arrives first; on a
   //    cached load the event may have fired before we got here).
   await page.evaluate(() => {
@@ -46,7 +46,7 @@ test('[TC-COOKIE-001] SecurePrivacy initialises, hide API is callable, and the b
     });
   });
 
-  // 3) API surface contract — both methods we depend on are bound.
+  // 3) API surface contract, both methods we depend on are bound.
   const apiShape = await page.evaluate(() => {
     const sp = (window as unknown as { sp?: SpApi }).sp;
     return {
@@ -61,7 +61,7 @@ test('[TC-COOKIE-001] SecurePrivacy initialises, hide API is callable, and the b
   // stop verifying its own outcome.
   expect(apiShape.visible).toBe('function');
 
-  // 4) Behaviour check — call hide, then assert the banner reports as
+  // 4) Behaviour check, call hide, then assert the banner reports as
   //    hidden. A regression that makes `hideCookieBanner` a no-op (still
   //    callable, doesn't throw, doesn't hide) would slip past a binding
   //    check; it can't slip past this one.

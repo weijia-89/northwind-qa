@@ -46,7 +46,7 @@ async function dismissCookieBanner(page: Page): Promise<void> {
     }, BUDGET_MS);
   } catch {
     console.warn(
-      '[fixtures] SecurePrivacy did not dismiss within %dms — continuing without it',
+      '[fixtures] SecurePrivacy did not dismiss within %dms, continuing without it',
       BUDGET_MS,
     );
   }
@@ -59,7 +59,7 @@ export const test = base.extend({
     await page.route(/picsum\.photos/, (route) => route.abort());
 
     // Auto-dismiss the SecurePrivacy banner after every navigation so it
-    // doesn't overlay clickable elements. Wrap both goto and reload —
+    // doesn't overlay clickable elements. Wrap both goto and reload,
     // reload re-injects the banner.
     const originalGoto = page.goto.bind(page);
     page.goto = (async (...args: Parameters<Page['goto']>) => {

@@ -60,7 +60,7 @@ test.describe('Authentication', () => {
   test('[TC-AUTH-006] register: duplicate email surfaces "already exists" error @P1', async ({ page }) => {
     await page.goto('/register', { waitUntil: 'domcontentloaded' });
 
-    // test@example.com is the seeded demo user — registering it again must fail.
+    // test@example.com is the seeded demo user, registering it again must fail.
     await page.getByTestId('register-name').fill('Demo Clone');
     await page.getByTestId('register-email').fill('test@example.com');
     await page.getByTestId('register-password').fill('Hunter2Hunter2!');

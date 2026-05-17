@@ -17,7 +17,7 @@ setup('authenticate seeded user', async ({ page }) => {
 
   // Auth-state assertion: hit /account and verify the page renders the
   // seeded user's email. /account is a ProtectedRoute, so an unauthenticated
-  // session would bounce to /login — but a routing pass alone isn't enough.
+  // session would bounce to /login, but a routing pass alone isn't enough.
   // A buggy SUT could route us to /account without a valid session and
   // render an empty profile. Asserting on user-bound content (the email
   // string we just logged in with) is the strongest user-visible proof

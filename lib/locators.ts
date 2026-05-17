@@ -14,7 +14,7 @@ export const navHome = (page: Page): Locator =>
 export const cartIconButton = (page: Page): Locator =>
   page.getByRole('button', { name: /^Cart with \d+ items?$/ });
 
-// Badge only renders when itemCount > 0 — so absence is meaningful.
+// Badge only renders when itemCount > 0, so absence is meaningful.
 export const cartBadge = (page: Page): Locator => page.getByTestId('cart-badge');
 
 export const accountTrigger = (page: Page): Locator =>
@@ -34,7 +34,7 @@ export const cartDrawerView = (page: Page): Locator =>
 // ---------- Cart page ----------
 
 // ╔══════════════════════════════════════════════════════════════════════╗
-// ║  STRICT-MODE PITFALL — READ THIS BEFORE ADDING CART-LINE TESTS       ║
+// ║  STRICT-MODE PITFALL, READ THIS BEFORE ADDING CART-LINE TESTS        ║
 // ╠══════════════════════════════════════════════════════════════════════╣
 // ║  CartDrawer mounts on EVERY page with the same `cart-line-*` testIds ║
 // ║  as the cart page list. Any locator like                             ║
@@ -43,14 +43,14 @@ export const cartDrawerView = (page: Page): Locator =>
 // ║  strict mode fails with a duplicate-match error.                     ║
 // ║                                                                      ║
 // ║  ALWAYS scope cart-line assertions through one of:                   ║
-// ║    cartLineList(page) — the /cart page list (this helper)            ║
-// ║    cartDrawer(page)   — the drawer panel above                       ║
+// ║    cartLineList(page), the /cart page list (this helper)             ║
+// ║    cartDrawer(page)  , the drawer panel above                        ║
 // ║                                                                      ║
 // ║  Example (correct):                                                  ║
 // ║    const list = cartLineList(page);                                  ║
 // ║    await expect(list.getByTestId(`cart-line-${slug}`)).toBeVisible();║
 // ║                                                                      ║
-// ║  Example (wrong — will fail strict mode):                            ║
+// ║  Example (wrong, will fail strict mode):                             ║
 // ║    await expect(page.getByTestId(`cart-line-${slug}`)).toBeVisible();║
 // ╚══════════════════════════════════════════════════════════════════════╝
 export const cartLineList = (page: Page): Locator =>
@@ -82,7 +82,7 @@ export const productCardBySlug = (page: Page, slug: string): Locator =>
 // FormField renders <label>Email<span aria-hidden> *</span></label>, so the
 // label's text content is "Email *". `getByLabel` matches the label text
 // (which still contains the asterisk), but `getByRole` uses the accessible
-// name (where aria-hidden content is stripped) — that's "Email" exactly.
+// name (where aria-hidden content is stripped), that's "Email" exactly.
 export const emailInput = (page: Page): Locator =>
   page.getByRole('textbox', { name: 'Email', exact: true });
 
@@ -110,7 +110,7 @@ export const cartTotal = (page: Page): Locator => page.getByTestId('cart-total')
 
 // ---------- Product list controls ----------
 
-// Both have visually-hidden <label> elements wired via htmlFor — getByLabel works.
+// Both have visually-hidden <label> elements wired via htmlFor, getByLabel works.
 export const searchInput = (page: Page): Locator =>
   page.getByLabel('Search products', { exact: true });
 
