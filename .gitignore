@@ -28,5 +28,5 @@ id_rsa*
 # Local-only scratch: future-improvements notes, working drafts,
 # anything not meant for the public repo but useful to keep alongside
 # the code. Convention matches the localonly/ pattern used in
-# career-help/ and other Wei-owned workspaces.
+# toren/ and other Wei-owned workspaces.
 localonly/
